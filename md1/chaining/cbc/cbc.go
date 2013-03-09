@@ -1,16 +1,15 @@
-package chaining
+package cbc
 
 import (
-	"crypto/cipher"
 	"crypto/aes"
+	"crypto/cipher"
+	"lkr_md1/chaining"
 )
 
 type CBC struct {
-	cipher []byte
-	plain []byte
-	key []byte
+	key   []byte
 	block cipher.Block
-	kl int
+	kl    int
 }
 
 /*
@@ -27,17 +26,24 @@ func NewCBC(k []byte) *CBC {
 
 	cbc := &CBC{
 		block: aes,
-		key: k,
-		kl : len(k),
+		key:   k,
+		kl:    len(k),
 	}
 
 	return cbc
 }
 
 /*
+ * Returns AES block size in bytes
+ */
+func (c *CBC) GetBlockSize() int {
+	return c.kl
+}
+
+/*
  * Does the CBC encryption, plaintext and init vector must be provided
  */
-func (c *CBC) Encrypt(p,v []byte) (result []byte) {
+func (c *CBC) Encrypt(p, v []byte) (result []byte) {
 
 	mixIn := make([]byte, len(v))
 	copy(mixIn, v)
@@ -45,18 +51,18 @@ func (c *CBC) Encrypt(p,v []byte) (result []byte) {
 	padded := false
 	originalLength := len(p)
 
-	if originalLength % c.kl != 0 {
+	if originalLength%c.kl != 0 {
 		padded = true
-		p = paddZeors(p, c.kl)
+		p = chaining.PaddZeros(p, c.kl)
 	}
 
-	for s:=0; s < originalLength; s += c.kl {
+	for s := 0; s < originalLength; s += c.kl {
 		mixIn = c.encryptBlock(p[s:s+c.kl], mixIn)
 		result = append(result, mixIn...)
 	}
 
 	if padded {
-		swapLastBlock(result, c.kl)
+		chaining.SwapLastBlock(result, c.kl)
 		result = result[:originalLength]
 	}
 
@@ -68,7 +74,7 @@ func (c *CBC) Encrypt(p,v []byte) (result []byte) {
  */
 func (c *CBC) encryptBlock(block, mixIn []byte) (result []byte) {
 	result = make([]byte, c.kl)
-	XorBlock(block, mixIn)
+	chaining.XorBlock(block, mixIn)
 
 	c.block.Encrypt(result, block)
 
@@ -86,20 +92,20 @@ func (c *CBC) Decrypt(t, v []byte) (result []byte) {
 	padded := false
 	originalLength := len(t)
 
-	if originalLength % c.kl != 0 {
+	if originalLength%c.kl != 0 {
 
 		padded = true
 		//second to last block must be decrypted 
 		wholeBlocks := originalLength / c.kl
-		secondToLast := c.decryptBlock(t[(wholeBlocks - 1) * c.kl: wholeBlocks * c.kl], make([]byte, c.kl))
-		t = paddLastBytes(t, secondToLast, c.kl)
+		secondToLast := c.decryptBlock(t[(wholeBlocks-1)*c.kl:wholeBlocks*c.kl], make([]byte, c.kl))
+		t = chaining.PaddLastBytes(t, secondToLast, c.kl)
 
-		swapLastBlock(t, c.kl)
+		chaining.SwapLastBlock(t, c.kl)
 	}
 
-	for s:= 0; s < len(t); s += c.kl {
+	for s := 0; s < len(t); s += c.kl {
 		result = append(result, c.decryptBlock(t[s:s+c.kl], mixIn)...)
-		mixIn = t[s:s+c.kl]
+		mixIn = t[s : s+c.kl]
 	}
 
 	if padded {
@@ -112,9 +118,9 @@ func (c *CBC) Decrypt(t, v []byte) (result []byte) {
 /*
  * Decrypts single block
  */
-func (c *CBC) decryptBlock(block, mixIn []byte) (result []byte){
+func (c *CBC) decryptBlock(block, mixIn []byte) (result []byte) {
 	result = make([]byte, c.kl)
 	c.block.Decrypt(result, block)
-	XorBlock(result, mixIn)
+	chaining.XorBlock(result, mixIn)
 	return
 }
