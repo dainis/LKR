@@ -6,65 +6,92 @@ import (
 	"io/ioutil"
 	"lkr_md1/chaining"
 	"lkr_md1/chaining/cbc"
+	"lkr_md1/chaining/ofb"
+	"os"
 )
 
-var mode = flag.String("m", "e", "e - to encrypt, d - to crypt")
+var action = flag.String("a", "e", "Action e - to encrypt, d - to crypt")
 var inputFile = flag.String("f", "", "Input file")
 var keyFile = flag.String("k", "", "Encryption/decryption key file")
 var vectorFile = flag.String("v", "", "Initialization vector file")
 var outputFile = flag.String("o", "", "Output file")
+var cipherMode = flag.String("m", "cbc", "CBC or OFB")
+var keyGenMode = flag.Int("g", 0, "if non null value then generate only generate key file for given size")
+
+func exitWithMessage(msg string) {
+	flag.PrintDefaults()
+	fmt.Print("\n"+msg+"\n\n")
+	os.Exit(1)
+}
 
 func main() {
 	flag.Parse()
-	if *mode != "e" && *mode != "d" {
-		flag.PrintDefaults()
-		panic("Invalid mode " + *mode)
+	if *keyGenMode != 0 {
+		doKeyGeneration();
+		return
+	}
+
+	if *action != "e" && *action != "d" {
+		exitWithMessage("Invalid action")
+	}
+
+	if *cipherMode != "cbc" && *cipherMode != "ofb" {
+		exitWithMessage("Invalid cipher mode")
 	}
 
 	if *inputFile == "" {
-		flag.PrintDefaults()
-		panic("No input file specified")
+		exitWithMessage("No input file specified")
 	}
 
 	if *keyFile == "" {
-		flag.PrintDefaults()
-		panic("No key file specified")
+		exitWithMessage("No key file specified")
 	}
 
 	if *vectorFile == "" {
-		flag.PrintDefaults()
-		panic("No vector file specified")
+		exitWithMessage("No vector file specified")
 	}
 
 	key, err := ioutil.ReadFile(*keyFile)
 
 	if err != nil {
-		flag.PrintDefaults()
-		panic("Couldnt read key file")
+		exitWithMessage("Couldn't read key file")
 	}
 
 	input, err := ioutil.ReadFile(*inputFile)
 
 	if err != nil {
-		flag.PrintDefaults()
-		panic("Couldnt read input file")
+		exitWithMessage("Couldn't read input file")
 	}
 
-	cbc := cbc.NewCBC(key)
+	var cipher chaining.Cipher
 
-	if *mode == "e" {
-		doCBCEncrypt(input, cbc)
+	if *cipherMode == "cbc" {
+		cipher = cbc.NewCBC(key)
 	} else {
-		doCBCDecrypt(input, cbc)
+		cipher = ofb.NewOFB(key)
+	}
+
+	if *action == "e" {
+		doEncrypt(input, cipher)
+	} else {
+		doDecrypt(input, cipher)
 	}
 }
 
-func doCBCEncrypt(input []byte, cbc *cbc.CBC) {
+func doKeyGeneration() {
+	err := ioutil.WriteFile(*outputFile, chaining.GetRandomBytes(*keyGenMode), 0644)
+	if err != nil {
+		panic("Couldn't write key file")
+	}
+	os.Exit(0)
+}
 
-	initVector := chaining.GetInitVector(cbc.GetBlockSize())
+func doEncrypt(input []byte, cipher chaining.Cipher) {
+
+	initVector := chaining.GetRandomBytes(cipher.GetBlockSize())
 	fmt.Printf("plain length \t: %d\n", len(input))
 
-	ct := cbc.Encrypt(input, initVector)
+	ct := cipher.Encrypt(input, initVector)
 
 	fmt.Printf("encrpyted size \t: %d\n", len(ct))
 
@@ -79,18 +106,21 @@ func doCBCEncrypt(input []byte, cbc *cbc.CBC) {
 	}
 }
 
-func doCBCDecrypt(input []byte, cbc *cbc.CBC) {
+func doDecrypt(input []byte, cipher chaining.Cipher) {
+
 	initVector, err := ioutil.ReadFile(*vectorFile)
+
 	if err != nil {
 		panic("Couldnt read initialization vector")
 	}
 
 	fmt.Printf("encrpyted size \t:%d\n", len(input))
 
-	pt := cbc.Decrypt(input, initVector)
+	pt := cipher.Decrypt(input, initVector)
 
 	fmt.Printf("decrypted size \t:%d\n", len(pt))
 	err = ioutil.WriteFile(*outputFile, pt, 0644)
+
 	if err != nil {
 		panic("Couldnt write decrypted file")
 	}

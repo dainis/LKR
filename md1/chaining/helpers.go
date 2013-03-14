@@ -3,6 +3,7 @@ package chaining
 import (
 	"crypto/rand"
 	"io"
+	"fmt"
 )
 
 /*
@@ -40,7 +41,7 @@ func PaddLastBytes(t, f []byte, size int) []byte {
 /*
  * Creates byte array which will serve as initialization vector
  */
-func GetInitVector(size int) (vector []byte) {
+func GetRandomBytes(size int) (vector []byte) {
 	vector = make([]byte, size)
 	_, err := io.ReadFull(rand.Reader, vector)
 	if err != nil {
@@ -56,4 +57,25 @@ func XorBlock(b, c []byte) {
 	for i := range c {
 		b[i] ^= c[i]
 	}
+}
+
+/*
+ * Pads block with 0 and indicator how many bytes were added(looks like ...,0x0,0x0,0x0,0x4)
+ */
+func PadMissingLenth(t []byte, l int) []byte {
+	missing := l - len(t) % l
+	pad := make([]byte, missing, missing)
+	fmt.Printf("will pad with missing %d\n", missing)
+	pad[missing-1] = byte(missing)
+	fmt.Printf("padded with %d\n", int(pad[missing-1]))
+	return append(t, pad...)
+}
+
+/*
+ * Removes pad which is added by PadMissingLenth
+ */
+func RemovePad(t []byte) []byte {
+	padLength := int(t[len(t)-1])
+	fmt.Printf("WILL remove %d\n", padLength)
+	return t[:len(t)-padLength]
 }

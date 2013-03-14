@@ -16,7 +16,7 @@ type CBC struct {
  * Creates new CBC AES encryption instance, encryption key is used to create 
  * AES block cipher
  */
-func NewCBC(k []byte) *CBC {
+func NewCBC(k []byte) chaining.Cipher {
 
 	aes, err := aes.NewCipher(k)
 
@@ -24,13 +24,13 @@ func NewCBC(k []byte) *CBC {
 		panic("AES cipher creation failed with")
 	}
 
-	cbc := &CBC{
+	cbc := CBC{
 		block: aes,
 		key:   k,
 		kl:    len(k),
 	}
 
-	return cbc
+	return &cbc
 }
 
 /*
