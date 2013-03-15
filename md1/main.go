@@ -16,7 +16,7 @@ var keyFile = flag.String("k", "", "Encryption/decryption key file")
 var vectorFile = flag.String("v", "", "Initialization vector file")
 var outputFile = flag.String("o", "", "Output file")
 var cipherMode = flag.String("m", "cbc", "CBC or OFB")
-var keyGenMode = flag.Int("g", 0, "if non null value then generate only generate key file for given size")
+var keyGenMode = flag.Int("g", 0, "if non zero value then generate only generate key file for given size")
 
 func exitWithMessage(msg string) {
 	flag.PrintDefaults()
@@ -45,10 +45,6 @@ func main() {
 
 	if *keyFile == "" {
 		exitWithMessage("No key file specified")
-	}
-
-	if *vectorFile == "" {
-		exitWithMessage("No vector file specified")
 	}
 
 	key, err := ioutil.ReadFile(*keyFile)
@@ -88,38 +84,26 @@ func doKeyGeneration() {
 
 func doEncrypt(input []byte, cipher chaining.Cipher) {
 
-	initVector := chaining.GetRandomBytes(cipher.GetBlockSize())
-	fmt.Printf("plain length \t: %d\n", len(input))
+	fmt.Printf("plain size \t:%d\n", len(input))
 
-	ct := cipher.Encrypt(input, initVector)
+	ct := cipher.Encrypt(input)
 
-	fmt.Printf("encrpyted size \t: %d\n", len(ct))
+	fmt.Printf("encrpyted size \t:%d\n", len(ct))
 
 	err := ioutil.WriteFile(*outputFile, ct, 0644)
 	if err != nil {
 		panic("Failed to write output to file")
 	}
-
-	err = ioutil.WriteFile(*vectorFile, initVector, 0644)
-	if err != nil {
-		panic("Failed to write initialization vector file")
-	}
 }
 
 func doDecrypt(input []byte, cipher chaining.Cipher) {
 
-	initVector, err := ioutil.ReadFile(*vectorFile)
-
-	if err != nil {
-		panic("Couldnt read initialization vector")
-	}
-
 	fmt.Printf("encrpyted size \t:%d\n", len(input))
 
-	pt := cipher.Decrypt(input, initVector)
+	pt := cipher.Decrypt(input)
 
 	fmt.Printf("decrypted size \t:%d\n", len(pt))
-	err = ioutil.WriteFile(*outputFile, pt, 0644)
+	err := ioutil.WriteFile(*outputFile, pt, 0644)
 
 	if err != nil {
 		panic("Couldnt write decrypted file")

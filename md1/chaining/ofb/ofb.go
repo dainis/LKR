@@ -28,48 +28,53 @@ func NewOFB(key []byte) chaining.Cipher {
 	return &ofb
 }
 
-func (o *OFB) Encrypt(p, v []byte) []byte {
-	p = chaining.PadMissingLenth(p, o.kl)
-
-	return o.performOFB(p, v)
+/*
+ * Encrypts plaintext using ofb chaining method
+ */
+func (o *OFB) Encrypt(p []byte) []byte {
+	p = chaining.PadMissingLenth(p, aes.BlockSize)
+	initVector := chaining.GetRandomBytes(aes.BlockSize) 
+	return append(initVector, o.performOFB(p, initVector)...)
 }
 
-func (o *OFB) Decrypt(ct, v []byte) []byte {
-	result := o.performOFB(ct, v)
-
+/*
+ * Decrypts using ofb chaining method, initialization vector is as the first 
+ * block of the cipher text
+ */
+func (o *OFB) Decrypt(ct []byte) []byte {
+	initVector := ct[:aes.BlockSize]
+	result := o.performOFB(ct[aes.BlockSize:], initVector)
 	return chaining.RemovePad(result)
 }
 
-func (o *OFB) performOFB(t, v []byte) (result []byte) {
+/*
+ * Does the actual ofb, encrypt and decrypt are exacly the same
+ */
+func (o *OFB) performOFB(t, mixIn []byte) (result []byte) {
 
 	var ct []byte
 
-	mixIn := make([]byte, o.kl)
-	copy(mixIn, v)
-
 	totalLenth := len(t)
 
-	for s:= 0; s < totalLenth; s+=o.kl {
-		ct, mixIn = o.doBlock(t[s : s  * o.kl], mixIn)
+	for s:= 0; s < totalLenth; s+=aes.BlockSize {
+		ct, mixIn = o.doBlock(t[s : s  +  aes.BlockSize], mixIn)
 		result = append(result, ct...)
 	}
 
 	return
 }
 
+/*
+ * Encrypts one block using ofb 
+ */
 func (o *OFB) doBlock(b, mixIn []byte) (result, nextMix []byte) {
-
-	nextMix = make([]byte, o.kl)
+	nextMix = make([]byte, aes.BlockSize)
 	o.block.Encrypt(nextMix, mixIn)
 
-	result = make([]byte, o.kl)
+	result = make([]byte, aes.BlockSize)
 	copy(result, b)
 
 	chaining.XorBlock(result, nextMix)
 
 	return
-}
-
-func (o *OFB) GetBlockSize() int {
-	return o.kl
 }
