@@ -1,7 +1,6 @@
 package cbc
 
 import (
-	"fmt"
 	"crypto/aes"
 	"crypto/cipher"
 	"lkr_md1/chaining"
@@ -87,8 +86,8 @@ func (c *CBC) Decrypt(t []byte) (result []byte) {
 		padded = true
 
 		//second to last block must be decrypted first
-		wholeBlocks := originalLength / aes.BlockSize 
-		secondToLast := c.decryptBlock(t[(wholeBlocks-1)*aes.BlockSize:wholeBlocks*aes.BlockSize], mixIn))
+		wholeBlocks := originalLength / aes.BlockSize
+		secondToLast := c.decryptBlock(t[(wholeBlocks-1)*aes.BlockSize:wholeBlocks*aes.BlockSize], mixIn)
 
 		t = chaining.PaddLastBytes(t, secondToLast, aes.BlockSize)
 		chaining.SwapLastBlock(t, aes.BlockSize)

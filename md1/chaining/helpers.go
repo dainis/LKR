@@ -2,8 +2,8 @@ package chaining
 
 import (
 	"crypto/rand"
-	"io"
 	"fmt"
+	"io"
 )
 
 /*
@@ -63,7 +63,7 @@ func XorBlock(b, c []byte) {
  * Pads block with 0 and indicator how many bytes were added(looks like ...,0x0,0x0,0x0,0x4)
  */
 func PadMissingLenth(t []byte, l int) []byte {
-	missing := l - len(t) % l
+	missing := l - len(t)%l
 	pad := make([]byte, missing, missing)
 	fmt.Printf("will pad with missing %d\n", missing)
 	pad[missing-1] = byte(missing)

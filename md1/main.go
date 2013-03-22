@@ -20,14 +20,14 @@ var keyGenMode = flag.Int("g", 0, "if non zero value then generate only generate
 
 func exitWithMessage(msg string) {
 	flag.PrintDefaults()
-	fmt.Print("\n"+msg+"\n\n")
+	fmt.Print("\n" + msg + "\n\n")
 	os.Exit(1)
 }
 
 func main() {
 	flag.Parse()
 	if *keyGenMode != 0 {
-		doKeyGeneration();
+		doKeyGeneration()
 		return
 	}
 

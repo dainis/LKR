@@ -1,4 +1,5 @@
 package ofb
+
 import (
 	"crypto/aes"
 	"crypto/cipher"
@@ -6,9 +7,9 @@ import (
 )
 
 type OFB struct {
-	key []byte
+	key   []byte
 	block cipher.Block
-	kl int
+	kl    int
 }
 
 func NewOFB(key []byte) chaining.Cipher {
@@ -33,7 +34,7 @@ func NewOFB(key []byte) chaining.Cipher {
  */
 func (o *OFB) Encrypt(p []byte) []byte {
 	p = chaining.PadMissingLenth(p, aes.BlockSize)
-	initVector := chaining.GetRandomBytes(aes.BlockSize) 
+	initVector := chaining.GetRandomBytes(aes.BlockSize)
 	return append(initVector, o.performOFB(p, initVector)...)
 }
 
@@ -56,8 +57,8 @@ func (o *OFB) performOFB(t, mixIn []byte) (result []byte) {
 
 	totalLenth := len(t)
 
-	for s:= 0; s < totalLenth; s+=aes.BlockSize {
-		ct, mixIn = o.doBlock(t[s : s  +  aes.BlockSize], mixIn)
+	for s := 0; s < totalLenth; s += aes.BlockSize {
+		ct, mixIn = o.doBlock(t[s:s+aes.BlockSize], mixIn)
 		result = append(result, ct...)
 	}
 
