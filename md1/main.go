@@ -16,7 +16,7 @@ var keyFile = flag.String("k", "", "Encryption/decryption key file")
 var vectorFile = flag.String("v", "", "Initialization vector file")
 var outputFile = flag.String("o", "", "Output file")
 var cipherMode = flag.String("m", "cbc", "CBC or OFB")
-var keyGenMode = flag.Int("g", 0, "if non zero value then generate only generate key file for given size")
+var keyGenMode = flag.Int("g", 0, "if non zero value then generate key file for given size")
 
 func exitWithMessage(msg string) {
 	flag.PrintDefaults()

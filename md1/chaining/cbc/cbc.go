@@ -12,10 +12,8 @@ type CBC struct {
 	kl    int
 }
 
-/*
- * Creates new CBC AES encryption instance, encryption key is used to create 
- * AES block cipher
- */
+//Creates new CBC AES encryption instance, encryption key is used to create
+//AES block cipher
 func NewCBC(k []byte) chaining.Cipher {
 
 	aes, err := aes.NewCipher(k)
@@ -33,9 +31,7 @@ func NewCBC(k []byte) chaining.Cipher {
 	return &cbc
 }
 
-/*
- * Does the CBC encryption, plaintext and init vector must be provided
- */
+//Does the CBC encryption, plaintext and init vector must be provided
 func (c *CBC) Encrypt(p []byte) (result []byte) {
 
 	mixIn := make([]byte, aes.BlockSize)
@@ -61,9 +57,7 @@ func (c *CBC) Encrypt(p []byte) (result []byte) {
 	return
 }
 
-/*
- * Encrypts single block using CBC schema
- */
+//Encrypts single block using CBC schema
 func (c *CBC) encryptBlock(block, mixIn []byte) (result []byte) {
 	result = make([]byte, aes.BlockSize)
 	chaining.XorBlock(block, mixIn)
@@ -71,9 +65,7 @@ func (c *CBC) encryptBlock(block, mixIn []byte) (result []byte) {
 	return
 }
 
-/*
- * Decrpyts message text using init vector
- */
+//Decrpyts message text using init vector
 func (c *CBC) Decrypt(t []byte) (result []byte) {
 
 	mixIn := make([]byte, aes.BlockSize)
@@ -105,9 +97,7 @@ func (c *CBC) Decrypt(t []byte) (result []byte) {
 	return
 }
 
-/*
- * Decrypts single block
- */
+//Decrypts single block
 func (c *CBC) decryptBlock(block, mixIn []byte) (result []byte) {
 	result = make([]byte, aes.BlockSize)
 	c.block.Decrypt(result, block)
